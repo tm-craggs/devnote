@@ -4,6 +4,7 @@ import "github.com/spf13/cobra"
 
 import (
 	"fmt"
+	"github.com/tm-craggs/devnote/utils"
 	"os"
 	"time"
 )
@@ -28,11 +29,18 @@ text editor and will contain the template text specified in the configuration fi
 			}
 		}
 
+		notePath := "devnotes/" + timeNow + ".md"
+
 		// create devnote
-		file, err := os.Create("devnotes/" + timeNow + ".md")
+		file, err := os.Create(notePath)
 
 		if err != nil {
 			return fmt.Errorf("could not create file: %w", err)
+		}
+
+		err = utils.OpenEditor(notePath)
+		if err != nil {
+			return fmt.Errorf("could not open editor: %w", err)
 		}
 
 		fmt.Println("devnote created")
