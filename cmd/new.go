@@ -33,18 +33,24 @@ text editor and will contain the template text specified in the configuration fi
 
 		// create devnote
 		file, err := os.Create(notePath)
-
 		if err != nil {
 			return fmt.Errorf("could not create file: %w", err)
 		}
 
+		// close devnote
+		err = file.Close()
+		if err != nil {
+			return fmt.Errorf("could not close file: %w", err)
+		}
+
+		// open user text editor
 		err = utils.OpenEditor(notePath)
 		if err != nil {
 			return fmt.Errorf("could not open editor: %w", err)
 		}
 
-		fmt.Println("devnote created")
-		return file.Close()
+		fmt.Println("devnote created at", notePath)
+		return nil
 
 	},
 }
