@@ -1,11 +1,12 @@
 package cmd
 
-import "github.com/spf13/cobra"
-
 import (
 	"fmt"
+	"github.com/spf13/cobra"
 	"github.com/tm-craggs/devnote/utils"
+	"gopkg.in/yaml.v3"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -16,20 +17,37 @@ var newCmd = &cobra.Command{
 text editor and will contain the template text specified in the configuration file.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		timeNow := time.Now().Format("2006-01-02 15:04:05")
-
-		// create devnote directory if none exists
-
-		// check if the directory exists, if not create.
-		if _, err := os.Stat("devnotes"); os.IsNotExist(err) {
-			// does not exist
-			err := os.Mkdir("devnotes", 0755)
-			if err != nil {
-				return fmt.Errorf("could not create devnotes subdirectory: %w", err)
-			}
+		// load project root
+		projectRoot, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("could not determine working directory: %w", err)
 		}
 
-		notePath := "devnotes/" + timeNow + ".md"
+		// load config file
+		configFilePath := filepath.Join(projectRoot, ".devnote.yaml")
+		configData, err := os.ReadFile(configFilePath)
+		if err != nil {
+			return fmt.Errorf("devnote not initalised. run 'devnote init' in your project root")
+		}
+
+		var config devnotesConfig
+		if err := yaml.Unmarshal(configData, &config); err != nil {
+			return fmt.Errorf("could not parse config: %w", err)
+		}
+
+		if config.NotesPath == "" {
+			return fmt.Errorf("NotesPath not set in config")
+		}
+
+		// check notes directory exists
+		if _, err := os.Stat(config.NotesPath); os.IsNotExist(err) {
+			return fmt.Errorf("notes directory does not exist at: %s", config.NotesPath)
+		}
+
+		// create file name
+		timeNow := time.Now().Format("2006-01-02 15:04:05")
+		noteFileName := timeNow + ".md"
+		notePath := filepath.Join(config.NotesPath, noteFileName)
 
 		// create devnote
 		file, err := os.Create(notePath)
