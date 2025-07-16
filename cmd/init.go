@@ -13,7 +13,8 @@ type initFlags struct {
 }
 
 type devnotesConfig struct {
-	NotesPath string `yaml:"notesPath"`
+	NotesPath     string `yaml:"notesPath"`
+	FileExtension string `yaml:"fileExtension"`
 }
 
 // helper function to parse flags with error handling
@@ -80,7 +81,11 @@ the config file using --path`,
 		}
 
 		// Write config
-		config := devnotesConfig{NotesPath: notesAbsPath}
+		config := devnotesConfig{
+			NotesPath:     notesAbsPath,
+			FileExtension: ".md", // default to markdown
+		}
+
 		data, err := yaml.Marshal(&config)
 		if err != nil {
 			return fmt.Errorf("failed to marshal config: %w", err)
