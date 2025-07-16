@@ -1,0 +1,15 @@
+Copyright 2025 Tom Craggs
+
+This project includes software developed by Tom Craggs.
+Source repository: https://github.com/tm-craggs/devnote
+GitHub profile: https://github.com/tm-craggs
+
+---
+
+This project includes the following third-party libraries:
+
+Cobra
+  Copyright 2013 The Cobra Authors
+  Source repository: https://github.com/spf13/cobra
+  License: Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
+  Note: The Cobra project does not include a NOTICE file. Attribution is provided here for transparency.
