@@ -33,14 +33,16 @@ var newCmd = &cobra.Command{
 text editor and will contain the template text specified in the configuration file.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		// load project root
+		// get devnote directory
 		projectRoot, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("could not determine working directory: %w", err)
 		}
 
+		devnoteDir := filepath.Join(projectRoot, ".devnote")
+
 		// load config file
-		configFilePath := filepath.Join(projectRoot, ".devnote.yaml")
+		configFilePath := filepath.Join(devnoteDir, "devnote.yaml")
 		configData, err := os.ReadFile(configFilePath)
 		if err != nil {
 			return fmt.Errorf("devnote not initalised. run 'devnote init' in your project root")
