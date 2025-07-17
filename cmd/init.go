@@ -107,9 +107,29 @@ the config file using --path`,
 			return fmt.Errorf("failed to marshal config: %w", err)
 		}
 
-		configFilePath := filepath.Join(projectRoot, ".devnote.yaml")
+		devnoteDir := filepath.Join(projectRoot, ".devnote")
+		stateDir := filepath.Join(devnoteDir, "state")
+
+		// create .devnote directory
+		if err := os.MkdirAll(devnoteDir, 0755); err != nil {
+			return fmt.Errorf("failed to create devnote directory: %w", err)
+		}
+
+		// create .devnote/state directory
+		if err := os.MkdirAll(stateDir, 0755); err != nil {
+			return fmt.Errorf("failed to create state directory: %w", err)
+		}
+
+		// create config file inside .devnote
+		configFilePath := filepath.Join(devnoteDir, "devnote.yaml")
 		if err := os.WriteFile(configFilePath, data, 0644); err != nil {
 			return fmt.Errorf("failed to write config file: %w", err)
+		}
+
+		// create file to stash last git commit ID
+		lastCommitPath := filepath.Join(stateDir, "last_commit.txt")
+		if err := os.WriteFile(lastCommitPath, []byte{}, 0644); err != nil {
+			return fmt.Errorf("failed to write last commit file: %w", err)
 		}
 
 		fmt.Printf("Initialised devnotes config at %s\n", configFilePath)
@@ -118,6 +138,6 @@ the config file using --path`,
 }
 
 func init() {
-	initCmd.Flags().StringP("path", "p", "", "Define a custom path for your devnotes folder.")
+	initCmd.Flags().StringP("path", "p", "", "Define a custom path for your notes folder.")
 	rootCmd.AddCommand(initCmd)
 }
