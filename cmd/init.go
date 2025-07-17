@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/tm-craggs/devnote/internal/config"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
@@ -26,11 +27,6 @@ import (
 
 type initFlags struct {
 	path string
-}
-
-type devnotesConfig struct {
-	NotesPath     string `yaml:"notesPath"`
-	FileExtension string `yaml:"fileExtension"`
 }
 
 // helper function to parse flags with error handling
@@ -97,7 +93,7 @@ the config file using --path`,
 		}
 
 		// Write config
-		config := devnotesConfig{
+		config := config.DevnotesConfig{
 			NotesPath:     notesAbsPath,
 			FileExtension: ".md", // default to markdown
 		}
