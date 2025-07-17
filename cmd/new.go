@@ -22,7 +22,9 @@ import (
 	"github.com/tm-craggs/devnote/utils"
 	"gopkg.in/yaml.v3"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -73,15 +75,14 @@ text editor and will contain the template text specified in the configuration fi
 		notePath := filepath.Join(config.NotesPath, noteFileName)
 
 		// create devnote
-		file, err := os.Create(notePath)
+		content, err := generateNoteContent(devnoteDir)
 		if err != nil {
-			return fmt.Errorf("could not create file: %w", err)
+			return fmt.Errorf("could not generate note content: %w", err)
 		}
 
-		// close devnote
-		err = file.Close()
+		err = os.WriteFile(notePath, []byte(content), 0644)
 		if err != nil {
-			return fmt.Errorf("could not close file: %w", err)
+			return fmt.Errorf("could not write to devnote: %w", err)
 		}
 
 		// open user text editor
@@ -94,6 +95,50 @@ text editor and will contain the template text specified in the configuration fi
 		return nil
 
 	},
+}
+
+func generateNoteContent(devnoteDir string) (string, error) {
+	stateDir := filepath.Join(devnoteDir, "state")
+	lastCommitPath := filepath.Join(stateDir, "last_commit.txt")
+
+	// Ensure state directory exists
+	if err := os.MkdirAll(stateDir, 0755); err != nil {
+		return "", fmt.Errorf("could not create state directory: %w", err)
+	}
+
+	// Read last commit
+	var sinceHash string
+	if data, err := os.ReadFile(lastCommitPath); err == nil {
+		sinceHash = strings.TrimSpace(string(data))
+	}
+
+	// Run git log
+	var gitLogCmd *exec.Cmd
+	if sinceHash != "" {
+		gitLogCmd = exec.Command("git", "log", sinceHash+"..HEAD", "--pretty=format:- %h %s (%an, %ad)", "--date=short")
+	} else {
+		gitLogCmd = exec.Command("git", "log", "--pretty=format:- %h %s (%an, %ad)", "--date=short")
+	}
+
+	output, err := gitLogCmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("could not get git log: %w", err)
+	}
+
+	// Get latest commit hash
+	headCmd := exec.Command("git", "rev-parse", "HEAD")
+	headHash, err := headCmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("could not get current HEAD: %w", err)
+	}
+
+	// Save new HEAD as last commit
+	if err := os.WriteFile(lastCommitPath, headHash, 0644); err != nil {
+		return "", fmt.Errorf("could not write last commit file: %w", err)
+	}
+
+	// Return commit log as string
+	return string(output), nil
 }
 
 func init() {
