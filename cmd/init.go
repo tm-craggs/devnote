@@ -92,10 +92,15 @@ the config file using --path`,
 			return fmt.Errorf("path exists and is not a directory: %s", notesAbsPath)
 		}
 
-		// Write config
+		// write default config
+		// TODO: Create global config and base local config off global config
 		config := config.DevnotesConfig{
 			NotesPath:     notesAbsPath,
 			FileExtension: ".md", // default to markdown
+			DateFormat:    `"%Y-%m-%d`,
+			TimeFormat:    `"%H:%M:%S"`,
+			LogCommand:    `"--pretty=format:- %h %s (%an, %ad)", "--date=short"`,
+			NoteTemplate:  `#{date} {time}\n####What's Changed?\nCommits since last note:\n {log}'`,
 		}
 
 		data, err := yaml.Marshal(&config)

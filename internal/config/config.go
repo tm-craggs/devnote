@@ -20,6 +20,7 @@ type DevnotesConfig struct {
 	NotesPath     string `yaml:"notesPath"`
 	FileExtension string `yaml:"fileExtension"`
 	DateFormat    string `yaml:"dateFormat"`
+	TimeFormat    string `yaml:"timeFormat"`
 	LogCommand    string `yaml:"logCommand"`
 	NoteTemplate  string `yaml:"noteTemplate"`
 }
