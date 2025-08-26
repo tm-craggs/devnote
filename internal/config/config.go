@@ -16,7 +16,7 @@
 
 package config
 
-type DevnotesConfig struct {
+type DevnoteConfig struct {
 	NotesPath     string `yaml:"notesPath"`
 	FileExtension string `yaml:"fileExtension"`
 	DateFormat    string `yaml:"dateFormat"`

@@ -18,13 +18,14 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/spf13/cobra"
 	"github.com/tm-craggs/devnote/internal/config"
 	"github.com/tm-craggs/devnote/internal/utils"
 	"gopkg.in/yaml.v3"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 var newCmd = &cobra.Command{
@@ -49,7 +50,7 @@ text editor and will contain the template text specified in the configuration fi
 			return fmt.Errorf("devnote not initalised. run 'devnote init' in your project root")
 		}
 
-		var config config.DevnotesConfig
+		var config config.DevnoteConfig
 		if err := yaml.Unmarshal(configData, &config); err != nil {
 			return fmt.Errorf("could not parse config: %w", err)
 		}

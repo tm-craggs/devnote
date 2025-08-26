@@ -18,11 +18,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/spf13/cobra"
 	"github.com/tm-craggs/devnote/internal/config"
 	"gopkg.in/yaml.v3"
-	"os"
-	"path/filepath"
 )
 
 type initFlags struct {
@@ -44,8 +45,8 @@ func getInitFlags(cmd *cobra.Command) (initFlags, error) {
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialise devnotes in the current directory",
-	Long: `The 'init' command initialises a devnotes config in the current directory. You can specify the notePath for
+	Short: "Initialise devnote in the current directory",
+	Long: `The 'init' command initialises a devnote config in the current directory. You can specify the notePath for
 the config file using --path`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		flags, err := getInitFlags(cmd)
@@ -94,7 +95,7 @@ the config file using --path`,
 
 		// write default config
 		// TODO: Create global config and base local config off global config
-		config := config.DevnotesConfig{
+		config := config.DevnoteConfig{
 			NotesPath:     notesAbsPath,
 			FileExtension: ".md", // default to markdown
 			DateFormat:    `"%Y-%m-%d`,
