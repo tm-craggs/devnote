@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -34,9 +35,9 @@ func CreateNoteContent(devnoteDir string) (string, error) {
 
 	content := template
 	content = strings.ReplaceAll(content, "{project}", GetProject())
-	content = strings.ReplaceAll(content, "{date}", GetDate(defaultDateFormat))
+	content = strings.ReplaceAll(content, "{date}", GetTime(defaultDateFormat))
 	content = strings.ReplaceAll(content, "{time}", GetTime(defaultTimeFormat))
-	content = strings.ReplaceAll(content, "{timestamp}", GetTimestamp(timestampFormat))
+	content = strings.ReplaceAll(content, "{timestamp}", GetTime(timestampFormat))
 	content = strings.ReplaceAll(content, "{log}", GetLog(stateDir))
 	content = strings.ReplaceAll(content, "{branch}", GetBranch())
 	content = strings.ReplaceAll(content, "{author-name}", GetAuthorName())
@@ -59,30 +60,18 @@ Placeholder functions to collect data for the following variables used in the no
 */
 
 func GetProject() string {
-
 	workingDir, err := os.Getwd()
 	if err != nil {
-
+		return "project=NULL"
 	}
-	return os.Getwd()
-}
-
-func GetDate(format string) string {
-	// TODO: return current date formatted
-	return ""
+	return filepath.Base(workingDir)
 }
 
 func GetTime(format string) string {
-	// TODO: return current time formatted
-	return ""
+	return time.Now().Format(format)
 }
 
-func GetTimestamp(format string) string {
-	// TODO: return current timestamp formatted
-	return ""
-}
-
-func GetLog(stateDir string) {
+func GetLog(stateDir string) string {
 	lastCommitPath := filepath.Join(stateDir, lastCommitFile)
 
 	var sinceHash string
@@ -115,7 +104,7 @@ func GetBranch() string {
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 	output, err := cmd.Output()
 	if err != nil {
-		return ""
+		return "branch=NULL"
 	}
 	return strings.TrimSpace(string(output))
 }
@@ -124,7 +113,7 @@ func GetAuthorName() string {
 	cmd := exec.Command("git", "config", "user.name")
 	output, err := cmd.Output()
 	if err != nil {
-		return ""
+		return "author=NULL"
 	}
 	return strings.TrimSpace(string(output))
 }
@@ -133,7 +122,7 @@ func GetAuthorEmail() string {
 	cmd := exec.Command("git", "config", "user.email")
 	output, err := cmd.Output()
 	if err != nil {
-		return ""
+		return "email=NULL"
 	}
 	return strings.TrimSpace(string(output))
 }
