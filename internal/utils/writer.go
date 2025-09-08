@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	templateFileName  = "template.txt"
+	templateFileName  = "templates.txt"
 	stateDirName      = "state"
 	lastCommitFile    = "last_commit.txt"
 	defaultDateFormat = "2006-01-02"
@@ -23,7 +23,7 @@ const (
 	timestampFormat   = "2006-01-02 15:04:05"
 )
 
-// CreateNoteContent builds a note using a template and inserts dynamic placeholders.
+// CreateNoteContent builds a note using a templates and inserts dynamic placeholders.
 func CreateNoteContent(devnoteDir string) (string, error) {
 	templatePath := filepath.Join(devnoteDir, templateFileName)
 	stateDir := filepath.Join(devnoteDir, stateDirName)
@@ -34,7 +34,7 @@ func CreateNoteContent(devnoteDir string) (string, error) {
 
 	templateBytes, err := os.ReadFile(templatePath)
 	if err != nil {
-		return "", fmt.Errorf("could not read template: %w", err)
+		return "", fmt.Errorf("could not read templates: %w", err)
 	}
 	template := string(templateBytes)
 
@@ -52,7 +52,7 @@ func CreateNoteContent(devnoteDir string) (string, error) {
 }
 
 /*
-Placeholder functions to collect data for the following variables used in the note template:
+Placeholder functions to collect data for the following variables used in the note templates:
 
 {project}
 {date}

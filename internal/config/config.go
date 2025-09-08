@@ -17,10 +17,21 @@
 package config
 
 type DevnoteConfig struct {
-	NotesPath     string `yaml:"notesPath"`
-	FileExtension string `yaml:"fileExtension"`
-	DateFormat    string `yaml:"dateFormat"`
-	TimeFormat    string `yaml:"timeFormat"`
-	LogCommand    string `yaml:"logCommand"`
-	NoteTemplate  string `yaml:"noteTemplate"`
+	// note settings
+	NotesPath     string `yaml:"notes_path"`     //devnotes
+	FileExtension string `yaml:"file_extension"` //.md
+	NoteTemplate  string `yaml:"note_template"`  // default
+
+	// editor settings
+	Editor     string   `yaml:"editor"`      // auto
+	EditorArgs []string `yaml:"editor_args"` // []
+
+	// behaviour
+	OpenAfterNew bool `yaml:"open_after_new"` // true
+
+	// git integration
+	AutoCommit   bool    `yaml:"auto_commit"`    // false
+	AutoAdd      bool    `yaml:"auto_add"`       // false
+	GitCommitMsg *string `yaml:"git_commit_msg"` // null
+
 }

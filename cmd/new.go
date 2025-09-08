@@ -55,7 +55,7 @@ var newCmd = &cobra.Command{
 	Use:   "new",
 	Short: "Create a new devnote",
 	Long: `The 'new' command creates a new devnote in the specified directory. The devnote will open in your default
-text editor and will contain the template text specified in the configuration file.`,
+text editor and will contain the templates text specified in the configuration file.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// get flags

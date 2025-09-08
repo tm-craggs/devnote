@@ -111,6 +111,7 @@ the config file using --path`,
 
 		devnoteDir := filepath.Join(projectRoot, ".devnote")
 		stateDir := filepath.Join(devnoteDir, "state")
+		templateDir := filepath.Join(devnoteDir, "templates")
 
 		// create .devnote directory
 		if err := os.MkdirAll(devnoteDir, 0755); err != nil {
@@ -120,6 +121,11 @@ the config file using --path`,
 		// create .devnote/state directory
 		if err := os.MkdirAll(stateDir, 0755); err != nil {
 			return fmt.Errorf("failed to create state directory: %w", err)
+		}
+
+		// create .devnote/templates directory
+		if err := os.MkdirAll(templateDir, 0755); err != nil {
+			return fmt.Errorf("failed to create templates directory: %w", err)
 		}
 
 		// create config file inside .devnote
