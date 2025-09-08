@@ -28,12 +28,41 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type newFlags struct {
+	name string
+	path string
+}
+
+// helper function to parse flags with error handling
+func getNewFlags(cmd *cobra.Command) (newFlags, error) {
+	var flags newFlags
+	var err error
+
+	flags.name, err = cmd.Flags().GetString("name")
+	if err != nil {
+		return flags, fmt.Errorf("failed to parse --name flag: %w", err)
+	}
+
+	flags.path, err = cmd.Flags().GetString("path")
+	if err != nil {
+		return flags, fmt.Errorf("failed to parse --path flag: %w", err)
+	}
+
+	return flags, nil
+}
+
 var newCmd = &cobra.Command{
 	Use:   "new",
 	Short: "Create a new devnote",
 	Long: `The 'new' command creates a new devnote in the specified directory. The devnote will open in your default
 text editor and will contain the template text specified in the configuration file.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		// get flags
+		flags, err := getNewFlags(cmd)
+		if err != nil {
+			return err
+		}
 
 		// get devnote directory
 		projectRoot, err := os.Getwd()
@@ -65,14 +94,26 @@ text editor and will contain the template text specified in the configuration fi
 		}
 
 		// create file name
-		timeNow := time.Now().Format("2006-01-02 15:04:05")
+		var noteFileName string
 		ext := config.FileExtension
 		if ext == "" {
 			ext = ".md"
 		}
+		if flags.name == "" {
+			timeNow := time.Now().Format("2006-01-02 15:04:05")
+			noteFileName = timeNow + ext
+		} else {
+			noteFileName = flags.name + ext
+		}
 
-		noteFileName := timeNow + ext
-		notePath := filepath.Join(config.NotesPath, noteFileName)
+		// create file path
+		var notePath string
+		if flags.path == "" {
+			// use path from configuration file
+			notePath = filepath.Join(config.NotesPath, noteFileName)
+		} else {
+			notePath = flags.path
+		}
 
 		// create devnote
 		content, err := utils.CreateNoteContent(devnoteDir)
@@ -98,5 +139,9 @@ text editor and will contain the template text specified in the configuration fi
 }
 
 func init() {
+
+	newCmd.Flags().StringP("name", "n", "", "name of the devnote")
+	newCmd.Flags().StringP("path", "p", "", "path of the devnote")
+
 	rootCmd.AddCommand(newCmd)
 }

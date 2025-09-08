@@ -7,6 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/storer"
+
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 const (
@@ -74,30 +79,56 @@ func GetTime(format string) string {
 func GetLog(stateDir string) string {
 	lastCommitPath := filepath.Join(stateDir, lastCommitFile)
 
+	r, err := git.PlainOpen(".")
+	if err != nil {
+		return fmt.Sprintf("Error opening git repo: %v", err)
+	}
+
+	ref, err := r.Head()
+	if err != nil {
+		return fmt.Sprintf("Error getting HEAD: %v", err)
+	}
+
 	var sinceHash string
 	if data, err := os.ReadFile(lastCommitPath); err == nil {
 		sinceHash = strings.TrimSpace(string(data))
 	}
 
-	var cmd *exec.Cmd
-	if sinceHash != "" {
-		cmd = exec.Command("git", "log", sinceHash+"..HEAD", "--pretty=format:- %h %s (%an, %ad)", "--date=short")
-	} else {
-		cmd = exec.Command("git", "log", "--pretty=format:- %h %s (%an, %ad)", "--date=short")
-	}
-
-	output, err := cmd.Output()
+	cIter, err := r.Log(&git.LogOptions{From: ref.Hash()})
 	if err != nil {
 		return fmt.Sprintf("Error getting git log: %v", err)
 	}
 
-	headCmd := exec.Command("git", "rev-parse", "HEAD")
-	headHash, err := headCmd.Output()
-	if err == nil {
-		_ = os.WriteFile(lastCommitPath, headHash, 0644)
+	var result strings.Builder
+	stopAt := sinceHash
+
+	// Iterate commits until we reach stopAt
+	err = cIter.ForEach(func(c *object.Commit) error {
+		if stopAt != "" && c.Hash.String() == stopAt {
+			return storer.ErrStop // stop iteration
+		}
+
+		shortHash := c.Hash.String()[:7]
+		shortDate := c.Author.When.Format("2006-01-02")
+		message := strings.TrimSpace(c.Message)
+
+		result.WriteString(fmt.Sprintf("- %s %s (%s, %s)\n",
+			shortHash,
+			message,
+			c.Author.Name,
+			shortDate,
+		))
+		return nil
+	})
+
+	if err != nil && err != storer.ErrStop {
+		return fmt.Sprintf("Error iterating commits: %v", err)
 	}
 
-	return string(output)
+	// Save current HEAD for next run
+	_ = os.WriteFile(lastCommitPath, []byte(ref.Hash().String()), 0644)
+
+	return result.String()
 }
 
 func GetBranch() string {
