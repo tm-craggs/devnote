@@ -25,11 +25,17 @@ import (
 	"github.com/tm-craggs/devnote/internal/utils"
 )
 
+const (
+	defaultNotesPath = "devnotes"
+	devnoteDirName   = ".devnote"
+	configFileName   = "devnote.yaml"
+)
+
 type initFlags struct {
 	path string
 }
 
-// helper function to parse flags with error handling
+// getInitFlags parses command flags with error handling
 func getInitFlags(cmd *cobra.Command) (initFlags, error) {
 	var flags initFlags
 	var err error
@@ -42,11 +48,95 @@ func getInitFlags(cmd *cobra.Command) (initFlags, error) {
 	return flags, nil
 }
 
+// expandPath handles ~ expansion and converts relative paths to absolute
+func expandPath(notePath, projectRoot string) (string, error) {
+	// Use default if empty
+	if notePath == "" {
+		notePath = defaultNotesPath
+	}
+
+	// Expand ~ to home directory
+	if len(notePath) >= 2 && notePath[:2] == "~/" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("could not resolve home directory: %w", err)
+		}
+		notePath = filepath.Join(home, notePath[2:])
+	}
+
+	// Convert to absolute path if relative
+	if !filepath.IsAbs(notePath) {
+		notePath = filepath.Join(projectRoot, notePath)
+	}
+
+	return notePath, nil
+}
+
+// ensureNotesDirectory creates the notes directory if it doesn't exist
+func ensureNotesDirectory(notesPath string) error {
+	info, err := os.Stat(notesPath)
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(notesPath, 0755); err != nil {
+			return fmt.Errorf("failed to create notes directory: %w", err)
+		}
+		fmt.Printf("Created notes directory at %s\n", notesPath)
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("error checking notes directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("path exists and is not a directory: %s", notesPath)
+	}
+	return nil
+}
+
+// createDevnoteStructure creates the .devnote directory structure and files
+func createDevnoteStructure(projectRoot string) error {
+	devnoteDir := filepath.Join(projectRoot, devnoteDirName)
+	stateDir := filepath.Join(devnoteDir, "state")
+	templateDir := filepath.Join(devnoteDir, "templates")
+
+	// Create .devnote directory
+	if err := os.MkdirAll(devnoteDir, 0755); err != nil {
+		return fmt.Errorf("failed to create devnote directory: %w", err)
+	}
+
+	// Create devnote.yaml config file
+	// TODO: Import global config if flag set here
+	configFilePath := filepath.Join(devnoteDir, configFileName)
+	if err := utils.CreateDefaultConfig(configFilePath); err != nil {
+		return fmt.Errorf("failed to create devnote config: %w", err)
+	}
+
+	// Create state and templates directories
+	for _, dir := range []string{stateDir, templateDir} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+
+	// Create state files
+	stateFiles := map[string]string{
+		"current-template.txt": filepath.Join(stateDir, "current-template.txt"),
+		"last_commit.txt":      filepath.Join(stateDir, "last_commit.txt"),
+	}
+
+	for name, path := range stateFiles {
+		if err := os.WriteFile(path, []byte{}, 0644); err != nil {
+			return fmt.Errorf("failed to write %s: %w", name, err)
+		}
+	}
+
+	fmt.Printf("Initialised devnotes config at %s\n", configFilePath)
+	return nil
+}
+
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialise devnote in the current directory",
-	Long: `The 'init' command initialises a devnote config in the current directory. You can specify the notePath for
-the config file using --path`,
+	Long: `The 'init' command initialises a devnote config in the current directory. 
+You can specify the notePath for the config file using --path`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		flags, err := getInitFlags(cmd)
 		if err != nil {
@@ -58,80 +148,16 @@ the config file using --path`,
 			return fmt.Errorf("could not get current working directory: %w", err)
 		}
 
-		notePath := flags.path
-		if notePath == "" {
-			notePath = "devnotes" // default
+		notesPath, err := expandPath(flags.path, projectRoot)
+		if err != nil {
+			return err
 		}
 
-		// Expand ~
-		if len(notePath) >= 2 && notePath[:2] == "~/" {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				return fmt.Errorf("could not resolve home directory: %w", err)
-			}
-			notePath = filepath.Join(home, notePath[2:])
+		if err := ensureNotesDirectory(notesPath); err != nil {
+			return err
 		}
 
-		// Make path absolute
-		notesAbsPath := notePath
-		if !filepath.IsAbs(notesAbsPath) {
-			notesAbsPath = filepath.Join(projectRoot, notesAbsPath)
-		}
-
-		// Check existence
-		info, err := os.Stat(notesAbsPath)
-		if os.IsNotExist(err) {
-			// Create the directory if it doesn't exist
-			if err := os.MkdirAll(notesAbsPath, 0755); err != nil {
-				return fmt.Errorf("failed to create notes directory: %w", err)
-			}
-			fmt.Printf("Created notes directory at %s\n", notesAbsPath)
-		} else if err != nil {
-			return fmt.Errorf("error checking notes directory: %w", err)
-		} else if !info.IsDir() {
-			return fmt.Errorf("path exists and is not a directory: %s", notesAbsPath)
-		}
-
-		devnoteDir := filepath.Join(projectRoot, ".devnote")
-		stateDir := filepath.Join(devnoteDir, "state")
-		templateDir := filepath.Join(devnoteDir, "templates")
-
-		// create .devnote directory
-		if err := os.MkdirAll(devnoteDir, 0755); err != nil {
-			return fmt.Errorf("failed to create devnote directory: %w", err)
-		}
-
-		// create devnote.yaml
-		// TODO: Import global config if flag set here
-		configFilePath := filepath.Join(devnoteDir, "devnote.yaml")
-		if err := utils.CreateDefaultConfig(configFilePath); err != nil {
-			return fmt.Errorf("failed to create devnote config: %w", err)
-		}
-
-		// create .devnote/state directory
-		if err := os.MkdirAll(stateDir, 0755); err != nil {
-			return fmt.Errorf("failed to create state directory: %w", err)
-		}
-
-		// create .devnote/templates directory
-		if err := os.MkdirAll(templateDir, 0755); err != nil {
-			return fmt.Errorf("failed to create templates directory: %w", err)
-		}
-
-		// create file to stash current template
-		currentTemplatePath := filepath.Join(stateDir, "current-template.txt")
-		if err := os.WriteFile(currentTemplatePath, []byte{}, 0644); err != nil {
-			return fmt.Errorf("failed to write last commit file: %w", err)
-		}
-
-		// create file to stash last git commit ID
-		lastCommitPath := filepath.Join(stateDir, "last_commit.txt")
-		if err := os.WriteFile(lastCommitPath, []byte{}, 0644); err != nil {
-			return fmt.Errorf("failed to write last commit file: %w", err)
-		}
-
-		fmt.Printf("Initialised devnotes config at %s\n", configFilePath)
-		return nil
+		return createDevnoteStructure(projectRoot)
 	},
 }
 
