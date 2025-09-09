@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -28,11 +29,11 @@ import (
 const (
 	defaultNotesPath = "devnotes"
 	devnoteDirName   = ".devnote"
-	configFileName   = "devnote.yaml"
 )
 
 type initFlags struct {
-	path string
+	path  string
+	clean bool
 }
 
 // getInitFlags parses command flags with error handling
@@ -43,6 +44,11 @@ func getInitFlags(cmd *cobra.Command) (initFlags, error) {
 	flags.path, err = cmd.Flags().GetString("path")
 	if err != nil {
 		return flags, fmt.Errorf("failed to parse --path flag: %w", err)
+	}
+
+	flags.clean, err = cmd.Flags().GetBool("clean")
+	if err != nil {
+		return flags, fmt.Errorf("failed to parse --clean flag: %w", err)
 	}
 
 	return flags, nil
@@ -102,13 +108,6 @@ func createDevnoteStructure(projectRoot string) error {
 		return fmt.Errorf("failed to create devnote directory: %w", err)
 	}
 
-	// Create devnote.yaml config file
-	// TODO: Import global config if flag set here
-	configFilePath := filepath.Join(devnoteDir, configFileName)
-	if err := utils.CreateDefaultConfig(configFilePath); err != nil {
-		return fmt.Errorf("failed to create devnote config: %w", err)
-	}
-
 	// Create state and templates directories
 	for _, dir := range []string{stateDir, templateDir} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
@@ -128,7 +127,53 @@ func createDevnoteStructure(projectRoot string) error {
 		}
 	}
 
-	fmt.Printf("Initialised devnotes config at %s\n", configFilePath)
+	return nil
+}
+
+// createConfig creates the local config file. This requires the structure to have been made to function.
+func createConfig(clean bool) error {
+	// Create devnote.yaml config file
+	configPath := filepath.Join(".devnote", "config.yaml")
+
+	if !clean {
+		// if clean is not set, attempt to copy. if fails, fallback to creating default
+		globalConfigPath := filepath.Join("/home/tom/.config/devnote", "devnote-global.yaml")
+
+		src, err := os.Open(globalConfigPath)
+		if err == nil {
+
+			defer func() {
+				if err := src.Close(); err != nil {
+					fmt.Printf("warning: failed to close source file: %v\n", err)
+				}
+			}()
+
+			dst, err := os.Create(configPath)
+			if err != nil {
+				return fmt.Errorf("failed to create local config: %w", err)
+			}
+
+			defer func() {
+				if err := dst.Close(); err != nil {
+					fmt.Printf("warning: failed to close destination file: %v\n", err)
+				}
+			}()
+
+			if _, err := io.Copy(dst, src); err != nil {
+				println("WARNING: failed to copy global config. Creating default config...")
+			} else {
+				return nil
+			}
+		} else {
+			println("WARNING: no global config found. Creating default config...")
+		}
+	}
+
+	// create default config
+	if err := utils.CreateDefaultConfig(configPath); err != nil {
+		return fmt.Errorf("failed to create default config: %w", err)
+	}
+
 	return nil
 }
 
@@ -138,6 +183,7 @@ var initCmd = &cobra.Command{
 	Long: `The 'init' command initialises a devnote config in the current directory. 
 You can specify the notePath for the config file using --path`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
 		flags, err := getInitFlags(cmd)
 		if err != nil {
 			return err
@@ -157,11 +203,21 @@ You can specify the notePath for the config file using --path`,
 			return err
 		}
 
-		return createDevnoteStructure(projectRoot)
+		if err := createDevnoteStructure(projectRoot); err != nil {
+			return err
+		}
+
+		if err := createConfig(flags.clean); err != nil {
+			return err
+		}
+
+		return nil
+
 	},
 }
 
 func init() {
 	initCmd.Flags().StringP("path", "p", "", "Define a custom path for your notes folder.")
+	initCmd.Flags().BoolP("clean", "c", false, "Do not copy configs or templates from global")
 	rootCmd.AddCommand(initCmd)
 }
