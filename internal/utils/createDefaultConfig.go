@@ -14,7 +14,6 @@ func CreateDefaultConfig(configPath string) error {
 	defaultConfig := config.DevnoteConfig{
 		NotesPath:     "./devnotes",
 		FileExtension: ".md",
-		NoteTemplate:  "default",
 
 		Editor:     "auto",
 		EditorArgs: []string{},

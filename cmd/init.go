@@ -22,8 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/tm-craggs/devnote/internal/config"
-	"gopkg.in/yaml.v3"
+	"github.com/tm-craggs/devnote/internal/utils"
 )
 
 type initFlags struct {
@@ -93,22 +92,6 @@ the config file using --path`,
 			return fmt.Errorf("path exists and is not a directory: %s", notesAbsPath)
 		}
 
-		// write default config
-		// TODO: Create global config and base local config off global config
-		config := config.DevnoteConfig{
-			NotesPath:     notesAbsPath,
-			FileExtension: ".md", // default to markdown
-			DateFormat:    `"%Y-%m-%d`,
-			TimeFormat:    `"%H:%M:%S"`,
-			LogCommand:    `"--pretty=format:- %h %s (%an, %ad)", "--date=short"`,
-			NoteTemplate:  `#{date} {time}\n####What's Changed?\nCommits since last note:\n {log}'`,
-		}
-
-		data, err := yaml.Marshal(&config)
-		if err != nil {
-			return fmt.Errorf("failed to marshal config: %w", err)
-		}
-
 		devnoteDir := filepath.Join(projectRoot, ".devnote")
 		stateDir := filepath.Join(devnoteDir, "state")
 		templateDir := filepath.Join(devnoteDir, "templates")
@@ -116,6 +99,13 @@ the config file using --path`,
 		// create .devnote directory
 		if err := os.MkdirAll(devnoteDir, 0755); err != nil {
 			return fmt.Errorf("failed to create devnote directory: %w", err)
+		}
+
+		// create devnote.yaml
+		// TODO: Import global config if flag set here
+		configFilePath := filepath.Join(devnoteDir, "devnote.yaml")
+		if err := utils.CreateDefaultConfig(configFilePath); err != nil {
+			return fmt.Errorf("failed to create devnote config: %w", err)
 		}
 
 		// create .devnote/state directory
@@ -128,10 +118,10 @@ the config file using --path`,
 			return fmt.Errorf("failed to create templates directory: %w", err)
 		}
 
-		// create config file inside .devnote
-		configFilePath := filepath.Join(devnoteDir, "devnote.yaml")
-		if err := os.WriteFile(configFilePath, data, 0644); err != nil {
-			return fmt.Errorf("failed to write config file: %w", err)
+		// create file to stash current template
+		currentTemplatePath := filepath.Join(stateDir, "current-template.txt")
+		if err := os.WriteFile(currentTemplatePath, []byte{}, 0644); err != nil {
+			return fmt.Errorf("failed to write last commit file: %w", err)
 		}
 
 		// create file to stash last git commit ID

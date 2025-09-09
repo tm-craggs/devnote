@@ -43,6 +43,9 @@ devnote init --clean
 devnote init --path /home/Desktop/my-project-notes
 ```
 
+> **Note:** add `.devnote/` to your `.gitignore`. This directory contains state data that should not be shared between
+> users. To share templates, copy them into users `.devnote/templates` folder either directly or via global templates. 
+
 ### New
 
 To create a new devnote, use the `new` command. It will automatically open in your preferred text editor
