@@ -11,6 +11,8 @@ import (
 // CreateDefaultConfig creates a new devnote config with default values, and writes it to the specified filepath
 func CreateDefaultConfig(configPath string) error {
 
+	//TODO: Add comments and explanations to the default config
+
 	defaultConfig := config.DevnoteConfig{
 		NotesPath:     "./devnotes",
 		FileExtension: ".md",

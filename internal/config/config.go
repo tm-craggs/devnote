@@ -20,7 +20,6 @@ type DevnoteConfig struct {
 	// note settings
 	NotesPath     string `yaml:"notes_path"`     //devnotes
 	FileExtension string `yaml:"file_extension"` //.md
-	NoteTemplate  string `yaml:"note_template"`  // default
 
 	// editor settings
 	Editor     string   `yaml:"editor"`      // auto
