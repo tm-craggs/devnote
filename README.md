@@ -27,15 +27,16 @@ To initialise devnotes in your current directory, run:
 devnote init
 ```
 
-- This creates the `.devnote` directory inside your project root, which will hold your local config and save data.
-- To allow for different behavior per project, each devnote instance uses its own config file. When initialised, a copy of the global devnotes config is created.
-- If you wish for your config to hold default settings, rather than the settings from the global config, use the `--default` flag:
+- This creates the `.devnote` directory inside your project root, which will hold your local config, templates, and save data
+- To allow for different behavior per project, each devnote instance has its own config file and set of templates
+- For ease of use, your global config file and any global templates will be copied over to your new devnote instance
+- If you wish for these to not be copied, use the `--clean` flag. This will create the default config and an empty templates folder
 
 ```
-devnote init --default
+devnote init --clean
 ```
 
-- A new folder is also created to store your notes. By default, this folder will be called `devnotes` and be held in your project root.
+- A new folder is also created to store your notes. By default, this folder will be called `devnotes` and be held in your project root
 - If you wish for the notes folder to be stored elsewhere, a custom path can be specified using the `--path` flag:
 
 ```
@@ -44,7 +45,7 @@ devnote init --path /home/Desktop/my-project-notes
 
 ### New
 
-To create a new devnote, use the `new` command. It will automatically open in your preferred text editor.
+To create a new devnote, use the `new` command. It will automatically open in your preferred text editor
 
 ```
 devnote new
@@ -73,7 +74,14 @@ devnote new --name fixed-regression
 ```
 devnote new --path /home/Desktop
 ```
-> **Note:** Saving a note outside of the notes folder will mean it does not show up when running `search` or `list`.
+
+- These flags can be combined. `--path` should define the directory the file will be saved to. `--name` defines the name
+```
+devnote new --path /home/Desktop --name desktop-note
+```
+
+
+> **Note:** Saving a note outside of the notes folder will mean it does not show up when running `search` or `list`
 
 ### Viewing and Editing Notes
 
@@ -103,7 +111,7 @@ devnote edit <note-name>
 ```
 devnote config
 ```
-> **Note:** this command also validates your config file. If any errors are found, they will be output to the console instead.
+> **Note:** this command also validates your config file. If any errors are found, they will be output to the console instead
 
 - To view a specfic setting:
 
@@ -126,11 +134,26 @@ devnote config set --global editor vim
 
 <br>
 
-> **Note:** Both the global can local configs can be edited manually. However, this approach is reccomended to avoid formatting issues.
+> **Note:** Both the global can local configs can be edited manually. However, this approach is reccomended to avoid formatting issues
 
 <br>
 
 ## Templating
+
+Templating is a core part of devnote. Each time you create a new note, it will be pre-filled with text defined in the currently selected template
+
+Templates are stored in the `.devnote/templates` directory
+
+If you wish to use dyanmic data in the note, such as showing your latest git commits or the current time, you can use the following placeholders in your template
+
+- `{project}` - The name of your project
+- `{date}` - The current date
+- `{time}` - The current time
+- `{timestamp}` - The current timestamp (date + time)
+- `{commits}` - Shows all git commits since the last devnote
+- `{branch}` - The current working branch
+- `{author-name}` - Your current configured git name
+- `{author-email}` - Your current configured git email
 
 <br>
 
@@ -138,7 +161,7 @@ devnote config set --global editor vim
 
 Since devnote creates standard markdown files, it plays nicely with the broader ecosystem:
 
-- **Publish your dev diary online** - Link your notes folder with static website generators, like Jekyll or Hugo, to build an online presense for your project.
+- **Publish your dev diary online** - Link your notes folder with static website generators, like Jekyll or Hugo, to build an online presense for your project
 - **Sync across devices and contributors** -
 - **Integrate with documentation**
 
